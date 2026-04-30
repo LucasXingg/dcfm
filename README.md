@@ -1,12 +1,13 @@
 # dcfm (Do Command For Me)
 
-`dcfm` is a cross-platform CLI tool written in Go that translates natural language prompts into executable shell commands using an LLM. It is environment-aware (detects OS, Shell, and current directory) and features a seamless "Review-Edit-Execute" loop.
+[English](README.md) | [中文](README_zh.md)
+
+`dcfm` is a cross-platform CLI tool written in Go that translates natural language prompts into executable shell commands using an LLM. It is environment-aware (detects OS, Shell, and current directory) and provide suitable commands based on the context.
 
 ## Features
 
 - **Natural Language to Shell**: Converts commands like "find all big files" into the exact bash, zsh, or PowerShell command you need.
-- **Environment-Aware**: Sends your OS, shell type, and current working directory to the LLM for perfectly tailored commands (e.g., handles Conda activation correctly).
-- **Interactive Review Loop**: Presents the proposed command and allows you to `Run`, `Edit` (refine your prompt), or `Cancel`.
+- **Environment-Aware**: Sends your OS, shell type, and current working directory to the LLM for perfectly tailored commands.
 - **Native Terminal Support**: Executes commands by attaching your terminal's standard input/output. This means interactive commands like `vim`, `top`, or `htop` work exactly as if you typed them yourself.
 - **Custom OpenAI-Compatible API**: Works out of the box with OpenAI's `gpt-4o`, but easily configurable to point to custom API endpoints (like LM Studio, Ollama, or Azure) by changing the Base URL.
 
@@ -31,7 +32,7 @@ Currently, you can install from source:
 Before using `dcfm`, you need to set up your API configuration.
 
 ```bash
-dcfm config
+dcfm -c
 ```
 You will be interactively prompted for:
 - **API Key**: Your OpenAI API key (or custom provider key).
@@ -60,13 +61,11 @@ Generating command...
 
 Proposed Command: ls -lhS *.json
 
-? What would you like to do?  [Use arrows to move, type to filter]
-> Run
-  Edit
-  Cancel
+? Execute (enter) / Cancel (q) / Edit (type message):
+
 ```
 
-If the command isn't quite right, select `Edit` to provide a refinement (e.g., "just show the top 5"). The tool will generate a new command based on your feedback.
+If the command isn't quite right, provide a refinement (e.g., "just show the top 5"). The tool will generate a new command based on your feedback.
 
 ## License
 

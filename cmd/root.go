@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"strings"
@@ -14,11 +15,26 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var configFlag bool
+
+func init() {
+	rootCmd.Flags().BoolVarP(&configFlag, "config", "c", false, "Configure dcfm API Key, Base URL, and Model")
+}
+
 var rootCmd = &cobra.Command{
 	Use:   "dcfm [prompt]",
 	Short: "dcfm translates natural language into shell commands",
-	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		if configFlag {
+			runConfig()
+			return
+		}
+
+		if len(args) == 0 {
+			cmd.Help()
+			os.Exit(0)
+		}
+
 		prompt := strings.Join(args, " ")
 		cfg, err := config.Load()
 		if err != nil {
@@ -56,8 +72,20 @@ var rootCmd = &cobra.Command{
 			} else if userInput == "" {
 				if llmResp.ModifiesEnv {
 					fmt.Println("\n\033[1;33mWarning: This command modifies the environment and cannot be executed directly by dcfm since changes won't persist to your shell.\033[0m")
-					if err := clipboard.WriteAll(llmResp.Command); err != nil {
-						fmt.Printf("Failed to copy command to clipboard: %v\n", err)
+					
+					copyErr := clipboard.WriteAll(llmResp.Command)
+					isRemote := os.Getenv("SSH_CLIENT") != "" || os.Getenv("SSH_TTY") != "" || os.Getenv("SSH_CONNECTION") != ""
+					
+					if isRemote {
+						encoded := base64.StdEncoding.EncodeToString([]byte(llmResp.Command))
+						fmt.Printf("\033]52;c;%s\a", encoded)
+						copyErr = nil
+					}
+
+					if copyErr != nil {
+						fmt.Printf("Failed to copy command to clipboard: %v\n", copyErr)
+					} else if isRemote {
+						fmt.Println("\033[1;32mThe command has been copied to your clipboard via OSC 52. Ensure your terminal emulator supports it. Paste it into your terminal to run it.\033[0m")
 					} else {
 						fmt.Println("\033[1;32mThe command has been copied to your clipboard. Paste it into your terminal to run it.\033[0m")
 					}

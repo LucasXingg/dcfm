@@ -18,6 +18,8 @@ builds:
 
 archives:
   - format: tar.gz
+    replacements:
+      darwin: macOS
     name_template: >-
       {{ .ProjectName }}_
       {{- title .Os }}_

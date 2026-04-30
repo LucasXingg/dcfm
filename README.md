@@ -1,4 +1,4 @@
-# `dcfm` (Do Command For Me)
+# dcfm (Do Command For Me)
 
 `dcfm` is a cross-platform CLI tool written in Go that translates natural language prompts into executable shell commands using an LLM. It is environment-aware (detects OS, Shell, and current directory) and features a seamless "Review-Edit-Execute" loop.
 
@@ -17,7 +17,7 @@ Currently, you can install from source:
 1. Ensure you have [Go](https://go.dev/) installed.
 2. Clone the repository and build:
    ```bash
-   git clone https://github.com/lucas/dcfm.git
+   git clone https://github.com/LucasXingg/dcfm.git
    cd dcfm
    go build -o dcfm
    ```

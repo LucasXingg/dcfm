@@ -13,7 +13,17 @@
 
 ## Installation
 
-Currently, you can install from source:
+### One-line Installation (macOS & Linux)
+
+The easiest way to install `dcfm` is using our install script:
+
+```bash
+curl -sL https://raw.githubusercontent.com/LucasXingg/dcfm/main/install.sh | bash
+```
+
+### Install from Source
+
+If you prefer, you can build from source:
 
 1. Ensure you have [Go](https://go.dev/) installed.
 2. Clone the repository and build:

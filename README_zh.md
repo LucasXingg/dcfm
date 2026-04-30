@@ -13,7 +13,17 @@
 
 ## 安装
 
-目前，您可以从源码进行安装：
+### 一键安装 (macOS & Linux)
+
+安装 `dcfm` 最简单的方法是使用我们的安装脚本：
+
+```bash
+curl -sL https://raw.githubusercontent.com/LucasXingg/dcfm/main/install.sh | bash
+```
+
+### 从源码安装
+
+如果您更愿意，可以从源码进行安装：
 
 1. 确保您已安装 [Go](https://go.dev/)。
 2. 克隆仓库并构建：

@@ -11,8 +11,7 @@ OS="$(uname -s)"
 case "${OS}" in
     Linux*)     OS_NAME="Linux";;
     Darwin*)    OS_NAME="macOS";;
-    CYGWIN*|MINGW*|MSYS*) OS_NAME="Windows";;
-    *)          echo "Unsupported OS: ${OS}"; exit 1;;
+    *)          echo "Unsupported OS: ${OS}. Only macOS and Linux are supported."; exit 1;;
 esac
 
 # Determine Architecture
@@ -43,20 +42,13 @@ fi
 
 echo "Latest version is ${VERSION}"
 
-# Set the correct extension
-if [ "${OS_NAME}" = "Windows" ]; then
-    EXT="zip"
-else
-    EXT="tar.gz"
-fi
-
 # Extract the browser_download_url
-DOWNLOAD_URL=$(echo "$RELEASE_DATA" | grep '"browser_download_url":' | grep -i "${OS_NAME}" | grep -i "${ARCH_NAME}" | grep "${EXT}" | head -n 1 | sed -E 's/.*"([^"]+)".*/\1/')
+DOWNLOAD_URL=$(echo "$RELEASE_DATA" | grep '"browser_download_url":' | grep -i "${OS_NAME}" | grep -i "${ARCH_NAME}" | grep "tar.gz" | head -n 1 | sed -E 's/.*"([^"]+)".*/\1/')
 
 if [ -z "$DOWNLOAD_URL" ]; then
     # Fallback check for Darwin
     if [ "${OS_NAME}" = "macOS" ]; then
-        DOWNLOAD_URL=$(echo "$RELEASE_DATA" | grep '"browser_download_url":' | grep -i "Darwin" | grep -i "${ARCH_NAME}" | grep "${EXT}" | head -n 1 | sed -E 's/.*"([^"]+)".*/\1/')
+        DOWNLOAD_URL=$(echo "$RELEASE_DATA" | grep '"browser_download_url":' | grep -i "Darwin" | grep -i "${ARCH_NAME}" | grep "tar.gz" | head -n 1 | sed -E 's/.*"([^"]+)".*/\1/')
     fi
     
     if [ -z "$DOWNLOAD_URL" ]; then
@@ -70,12 +62,7 @@ echo "Downloading from ${DOWNLOAD_URL}..."
 TMP_DIR=$(mktemp -d)
 cd "$TMP_DIR"
 
-if [ "${EXT}" = "tar.gz" ]; then
-    curl -sL "$DOWNLOAD_URL" | tar xz
-elif [ "${EXT}" = "zip" ]; then
-    curl -sLo "${BIN_NAME}.zip" "$DOWNLOAD_URL"
-    unzip -q "${BIN_NAME}.zip"
-fi
+curl -sL "$DOWNLOAD_URL" | tar xz
 
 echo "Installing ${BIN_NAME} to ${INSTALL_DIR}..."
 if [ -w "$INSTALL_DIR" ]; then

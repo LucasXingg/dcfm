@@ -58,7 +58,7 @@ func runExplain(args []string) {
 
 	var llmResp explainResponse
 	if err := json.Unmarshal([]byte(content), &llmResp); err != nil {
-		fmt.Printf("failed to parse JSON response from LLM: %w. Raw content: %s", err, content)
+		fmt.Printf("failed to parse JSON response from LLM: %v. Raw content: %s", err, content)
 		os.Exit(1)
 	}
 

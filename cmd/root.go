@@ -65,13 +65,13 @@ var rootCmd = &cobra.Command{
 			content, err := llm.GenerateCommand(ctx, prompt, cfg, shellCtx, llm.GenCmdPromptTpl)
 
 			if err != nil {
-				fmt.Printf(i18n.Format(msg.MainErrorGeneratingCommand, err))
+				fmt.Printf(msg.MainErrorGeneratingCommand, err)
 				os.Exit(1)
 			}
 
 			var llmResp cmdResponse
 			if err := json.Unmarshal([]byte(content), &llmResp); err != nil {
-				fmt.Printf(i18n.Format(msg.MainErrorParsingResponse, err, content))
+				fmt.Printf(msg.MainErrorParsingResponse, err, content)
 				os.Exit(1)
 			}
 
@@ -105,20 +105,20 @@ var rootCmd = &cobra.Command{
 					}
 
 					if copyErr != nil {
-						fmt.Printf(i18n.Format(msg.MainClipboardError, copyErr))
-					} else if isRemote {
-						fmt.Println("\033[1;32m" + msg.MainClipboardCopiedRemote + "\033[0m")
-					} else {
-						fmt.Println("\033[1;32m" + msg.MainClipboardCopied + "\033[0m")
-					}
-					os.Exit(0)
+					fmt.Printf(msg.MainClipboardError, copyErr)
+				} else if isRemote {
+					fmt.Println("\033[1;32m" + msg.MainClipboardCopiedRemote + "\033[0m")
+				} else {
+					fmt.Println("\033[1;32m" + msg.MainClipboardCopied + "\033[0m")
 				}
+				os.Exit(0)
+			}
 
-				err := shell.Execute(llmResp.Command)
-				if err != nil {
-					fmt.Printf(i18n.Format(msg.MainCommandError, err))
-					os.Exit(1)
-				}
+			err := shell.Execute(llmResp.Command)
+			if err != nil {
+				fmt.Printf(msg.MainCommandError, err)
+				os.Exit(1)
+			}
 				os.Exit(0)
 			} else {
 				if cfg.Language == string(i18n.Chinese) {

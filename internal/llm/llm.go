@@ -7,7 +7,6 @@ import (
 	"text/template"
 
 	"github.com/lucas/dcfm/internal/config"
-	"github.com/lucas/dcfm/internal/i18n"
 	"github.com/lucas/dcfm/internal/shell"
 	"github.com/sashabaranov/go-openai"
 )
@@ -18,7 +17,6 @@ const GenCmdPromptTpl = `You are a shell command generator. Output a JSON object
 
 OS: {{.OS}}, Shell: {{.Shell}}, PWD: {{.PWD}}, Language: {{.Language}}.
 
-Important: Your response must be in {{.Language}} language.
 
 Here are two examples:
 
@@ -34,7 +32,7 @@ const ExplainPromptTpl = `You are a shell command assistant. Output a JSON objec
 3. "suspicion": Explain if the command is suspicious or contains typo. If not, leave it empty.
 
 Following are the user's OS, shell, and PWD information:
-OS: {{.OS}}, Shell: {{.Shell}}, PWD: {{.PWD}}, Language: {{.Language}}.
+OS: {{.OS}}, Shell: {{.Shell}}, PWD: {{.PWD}}.
 
 Important: Your response must be in {{.Language}} language. All explanations in the JSON must be in {{.Language}}.
 
@@ -48,8 +46,7 @@ Assistant: {"explain": "Fetch a script from \"gthub\" and execute it", "flags": 
 
 func GenerateCommand(ctx context.Context, prompt string, cfg config.Config, shellCtx shell.Context, tpl string) (string, error) {
 	if cfg.APIKey == "" {
-		msg := i18n.GetMessages(i18n.Lang(cfg.Language))
-		return "", fmt.Errorf(msg.MainAPIKeyMissing)
+		return "", fmt.Errorf("API key is missing. Please run 'dcfm config' to set it")
 	}
 
 	clientConfig := openai.DefaultConfig(cfg.APIKey)

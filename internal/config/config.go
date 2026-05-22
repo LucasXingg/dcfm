@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	APIKey  string `json:"api_key"`
-	BaseURL string `json:"base_url,omitempty"`
-	Model   string `json:"model,omitempty"`
+	APIKey   string `json:"api_key"`
+	BaseURL  string `json:"base_url,omitempty"`
+	Model    string `json:"model,omitempty"`
+	Language string `json:"language,omitempty"`
 }
 
 func getDir() (string, error) {
@@ -58,6 +59,9 @@ func Load() (Config, error) {
 	if envModel := os.Getenv("DCFM_MODEL"); envModel != "" {
 		cfg.Model = envModel
 	}
+	if envLang := os.Getenv("DCFM_LANGUAGE"); envLang != "" {
+		cfg.Language = envLang
+	}
 
 	// Set defaults
 	if cfg.BaseURL == "" {
@@ -65,6 +69,9 @@ func Load() (Config, error) {
 	}
 	if cfg.Model == "" {
 		cfg.Model = "gpt-4o"
+	}
+	if cfg.Language == "" {
+		cfg.Language = "en"
 	}
 
 	return cfg, nil

@@ -7,9 +7,10 @@ import (
 )
 
 type Context struct {
-	OS    string
-	Shell string
-	PWD   string
+	OS       string
+	Shell    string
+	PWD      string
+	Language string
 }
 
 func GetContext() Context {
@@ -21,10 +22,17 @@ func GetContext() Context {
 	}
 
 	return Context{
-		OS:    runtime.GOOS,
-		Shell: shell,
-		PWD:   pwd,
+		OS:       runtime.GOOS,
+		Shell:    shell,
+		PWD:      pwd,
+		Language: "en",
 	}
+}
+
+func GetContextWithLanguage(language string) Context {
+	ctx := GetContext()
+	ctx.Language = language
+	return ctx
 }
 
 // Execute runs the given command string in the native shell.

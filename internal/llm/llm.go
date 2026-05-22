@@ -2,26 +2,23 @@ package llm
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"text/template"
 
 	"github.com/lucas/dcfm/internal/config"
+	"github.com/lucas/dcfm/internal/i18n"
 	"github.com/lucas/dcfm/internal/shell"
 	"github.com/sashabaranov/go-openai"
 )
 
-type Response struct {
-	Command     string `json:"command"`
-	ModifiesEnv bool   `json:"modifies_env"`
-}
-
-const systemPromptTpl = `You are a shell command generator. Output a JSON object with two fields:
+const GenCmdPromptTpl = `You are a shell command generator. Output a JSON object with two fields:
 1. "command": The raw command to execute. Make sure it is a one-line command. No markdown. No backticks.
 2. "modifies_env": A boolean indicating whether the command modifies the current environment (e.g., cd, export, alias) because these changes will not persist to the user's shell after the tool exits.
 
-OS: {{.OS}}, Shell: {{.Shell}}, PWD: {{.PWD}}.
+OS: {{.OS}}, Shell: {{.Shell}}, PWD: {{.PWD}}, Language: {{.Language}}.
+
+Important: Your response must be in {{.Language}} language.
 
 Here are two examples:
 
@@ -31,9 +28,28 @@ Assistant: {"command": "cd ~", "modifies_env": true}
 User: list all go files
 Assistant: {"command": "ls *.go", "modifies_env": false}`
 
-func GenerateCommand(ctx context.Context, prompt string, cfg config.Config, shellCtx shell.Context) (*Response, error) {
+const ExplainPromptTpl = `You are a shell command assistant. Output a JSON object with following fields:
+1. "explain": The explaination of the given bash command.
+2. "flags": A dictionary of explanation of all flags.
+3. "suspicion": Explain if the command is suspicious or contains typo. If not, leave it empty.
+
+Following are the user's OS, shell, and PWD information:
+OS: {{.OS}}, Shell: {{.Shell}}, PWD: {{.PWD}}, Language: {{.Language}}.
+
+Important: Your response must be in {{.Language}} language. All explanations in the JSON must be in {{.Language}}.
+
+Here are two examples:
+
+User: cd ~
+Assistant: {"explain": "go to my home directory", "flags": {}, "suspicion": ""}
+
+User: cuel -sL https://raw.gthubusercontent.com/LucasXingg/dcfm/main/install.sh | bash
+Assistant: {"explain": "Fetch a script from \"gthub\" and execute it", "flags": {"-s": "Silent mode", "-L": "Follow redirects"}, "suspicion": "The url is not official GitHub, likely a malicious one. And the command uses 'cuel' which is likely a typo for 'curl'"}`
+
+func GenerateCommand(ctx context.Context, prompt string, cfg config.Config, shellCtx shell.Context, tpl string) (string, error) {
 	if cfg.APIKey == "" {
-		return nil, fmt.Errorf("API key is missing. Please run 'dcfm config' to set it")
+		msg := i18n.GetMessages(i18n.Lang(cfg.Language))
+		return "", fmt.Errorf(msg.MainAPIKeyMissing)
 	}
 
 	clientConfig := openai.DefaultConfig(cfg.APIKey)
@@ -43,14 +59,14 @@ func GenerateCommand(ctx context.Context, prompt string, cfg config.Config, shel
 	client := openai.NewClientWithConfig(clientConfig)
 
 	// Render system prompt
-	tmpl, err := template.New("system").Parse(systemPromptTpl)
+	tmpl, err := template.New("system").Parse(tpl)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse system prompt template: %w", err)
+		return "", fmt.Errorf("failed to parse system prompt template: %w", err)
 	}
 
 	var systemPromptBuilder strings.Builder
 	if err := tmpl.Execute(&systemPromptBuilder, shellCtx); err != nil {
-		return nil, fmt.Errorf("failed to execute system prompt template: %w", err)
+		return "", fmt.Errorf("failed to execute system prompt template: %w", err)
 	}
 
 	req := openai.ChatCompletionRequest{
@@ -73,19 +89,21 @@ func GenerateCommand(ctx context.Context, prompt string, cfg config.Config, shel
 
 	resp, err := client.CreateChatCompletion(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("LLM request failed: %w", err)
+		return "", fmt.Errorf("LLM request failed: %w", err)
 	}
 
 	if len(resp.Choices) == 0 {
-		return nil, fmt.Errorf("LLM returned no choices")
+		return "", fmt.Errorf("LLM returned no choices")
 	}
 
 	content := resp.Choices[0].Message.Content
-	
-	var llmResp Response
-	if err := json.Unmarshal([]byte(content), &llmResp); err != nil {
-		return nil, fmt.Errorf("failed to parse JSON response from LLM: %w. Raw content: %s", err, content)
-	}
 
-	return &llmResp, nil
+	return content, nil
+	
+	// var llmResp Response
+	// if err := json.Unmarshal([]byte(content), &llmResp); err != nil {
+	// 	return nil, fmt.Errorf("failed to parse JSON response from LLM: %w. Raw content: %s", err, content)
+	// }
+
+	// return &llmResp, nil
 }

@@ -51,7 +51,7 @@ dcfm -c
 - **Base URL**：默认为 OpenAI，但可以设置为任何兼容 OpenAI 的 API 端点。
 - **Model Name**：默认为 `gpt-4o`。
 
-*注意：您的配置被安全地存储在 `~/.config/dcfm/config.json`（Windows 下为 `%AppData%/dcfm/config.json`）中，文件权限为 `0600`。*
+*注意：您的配置被安全地存储在 `~/.config/dcfm/config.json` 中，文件权限为 `0600`。*
 
 ### 环境变量
 您也可以在运行时通过使用环境变量覆盖配置：

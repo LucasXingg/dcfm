@@ -10,6 +10,25 @@ const (
 )
 
 type Messages struct {
+	ExplainInput       string
+	ExplainEmpty       string
+	ExplainGenerating  string
+	ExplainError       string
+	ExplainTitle       string
+	ExplainSuspicion   string
+	ExplainDisclaimer  string
+	RootDescription    string
+	ConfigFlag         string
+	ExplainFlag        string
+	HelpFlag           string
+	HelpUsage          string
+	HelpFlags          string
+	SelectHint         string
+	LLMTemplateParse   string
+	LLMTemplateExecute string
+	LLMRequest         string
+	LLMEmpty           string
+
 	ConfigTitle                string
 	ConfigSelectPrompt         string
 	ConfigSelectAll            string
@@ -46,6 +65,25 @@ type Messages struct {
 
 var messages = map[Lang]Messages{
 	English: {
+		ExplainInput:       "Enter command to explain:",
+		ExplainEmpty:       "No command provided.",
+		ExplainGenerating:  "Generating explanation...",
+		ExplainError:       "Error explaining command: %v",
+		ExplainTitle:       "Explanation:",
+		ExplainSuspicion:   "Your command may contain suspicious behavior:",
+		ExplainDisclaimer:  "The model may be wrong; please double-check carefully.",
+		RootDescription:    "dcfm translates natural language into shell commands",
+		ConfigFlag:         "Configure API key, base URL, model, and language",
+		ExplainFlag:        "Explain the command you pass in",
+		HelpFlag:           "Show help",
+		HelpUsage:          "Usage:",
+		HelpFlags:          "Flags:",
+		SelectHint:         "Use arrows to move, type to filter",
+		LLMTemplateParse:   "Failed to parse system prompt template: %w",
+		LLMTemplateExecute: "Failed to render system prompt template: %w",
+		LLMRequest:         "LLM request failed: %w",
+		LLMEmpty:           "LLM returned no choices",
+
 		ConfigTitle:                "dcfm Configuration",
 		ConfigSelectPrompt:         "What would you like to configure?",
 		ConfigSelectAll:            "Configure All Settings",
@@ -74,12 +112,31 @@ var messages = map[Lang]Messages{
 		MainClipboardCopiedRemote:  "The command has been copied to your clipboard via OSC 52. Ensure your terminal emulator supports it. Paste it into your terminal to run it.",
 		MainClipboardError:         "Failed to copy command to clipboard: %v",
 		MainCommandError:           "Command finished with error: %v",
-		MainAPIKeyMissing:          "API key is missing. Please run 'dcfm config' to set it",
+		MainAPIKeyMissing:          "API key is missing. Please run 'dcfm -c' to set it",
 		MainErrorLoadingConfig:     "Error loading config: %v",
 		MainErrorGeneratingCommand: "Error generating command: %v",
-		MainErrorParsingResponse:   "failed to parse JSON response from LLM: %w. Raw content: %s",
+		MainErrorParsingResponse:   "failed to parse JSON response from LLM: %v. Raw content: %s",
 	},
 	Chinese: {
+		ExplainInput:       "请输入要解释的命令：",
+		ExplainEmpty:       "未提供命令。",
+		ExplainGenerating:  "正在生成解释...",
+		ExplainError:       "解释命令出错：%v",
+		ExplainTitle:       "命令解释：",
+		ExplainSuspicion:   "您的命令可能包含可疑行为：",
+		ExplainDisclaimer:  "模型可能出错，请仔细核查。",
+		RootDescription:    "dcfm 将自然语言转换为 shell 命令",
+		ConfigFlag:         "配置 API 密钥、基础 URL、模型和语言",
+		ExplainFlag:        "解释传入的命令",
+		HelpFlag:           "显示帮助",
+		HelpUsage:          "用法：",
+		HelpFlags:          "选项：",
+		SelectHint:         "使用方向键移动，输入文字筛选",
+		LLMTemplateParse:   "解析系统提示模板失败：%w",
+		LLMTemplateExecute: "渲染系统提示模板失败：%w",
+		LLMRequest:         "模型请求失败：%w",
+		LLMEmpty:           "模型未返回任何结果",
+
 		ConfigTitle:                "dcfm 配置",
 		ConfigSelectPrompt:         "您想要配置什么？",
 		ConfigSelectAPIKey:         "API 密钥",
@@ -108,10 +165,10 @@ var messages = map[Lang]Messages{
 		MainClipboardCopiedRemote:  "命令已通过 OSC 52 复制到剪贴板，请确保您的终端模拟器支持此功能。粘贴到终端运行。",
 		MainClipboardError:         "复制命令到剪贴板失败：%v",
 		MainCommandError:           "命令执行出错：%v",
-		MainAPIKeyMissing:          "API 密钥缺失，请运行 'dcfm config' 设置",
+		MainAPIKeyMissing:          "API 密钥缺失，请运行 'dcfm -c' 设置",
 		MainErrorLoadingConfig:     "加载配置出错：%v",
 		MainErrorGeneratingCommand: "生成命令出错：%v",
-		MainErrorParsingResponse:   "解析 LLM JSON 响应失败：%w。原始内容：%s",
+		MainErrorParsingResponse:   "解析 LLM JSON 响应失败：%v。原始内容：%s",
 	},
 }
 

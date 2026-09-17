@@ -38,15 +38,13 @@ func Load() (Config, error) {
 	}
 
 	data, err := os.ReadFile(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return cfg, nil // Return empty config if not exists
-		}
+	if err != nil && !os.IsNotExist(err) {
 		return cfg, err
 	}
-
-	if err := json.Unmarshal(data, &cfg); err != nil {
-		return cfg, err
+	if err == nil {
+		if err := json.Unmarshal(data, &cfg); err != nil {
+			return cfg, err
+		}
 	}
 
 	// Environment variable overrides

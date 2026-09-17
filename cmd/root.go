@@ -52,7 +52,7 @@ var rootCmd = &cobra.Command{
 		prompt := strings.Join(args, " ")
 		cfg, err := config.Load()
 		if err != nil {
-			fmt.Printf("Error loading config: %v\n", err)
+			fmt.Printf(i18n.GetMessages(i18n.Lang(cfg.Language)).MainErrorLoadingConfig+"\n", err)
 			os.Exit(1)
 		}
 
@@ -94,10 +94,10 @@ var rootCmd = &cobra.Command{
 			} else if userInput == "" {
 				if llmResp.ModifiesEnv {
 					fmt.Println("\n\033[1;33m" + msg.MainWarningEnv + "\033[0m")
-					
+
 					copyErr := clipboard.WriteAll(llmResp.Command)
 					isRemote := os.Getenv("SSH_CLIENT") != "" || os.Getenv("SSH_TTY") != "" || os.Getenv("SSH_CONNECTION") != ""
-					
+
 					if isRemote {
 						encoded := base64.StdEncoding.EncodeToString([]byte(llmResp.Command))
 						fmt.Printf("\033]52;c;%s\a", encoded)
@@ -105,20 +105,20 @@ var rootCmd = &cobra.Command{
 					}
 
 					if copyErr != nil {
-					fmt.Printf(msg.MainClipboardError, copyErr)
-				} else if isRemote {
-					fmt.Println("\033[1;32m" + msg.MainClipboardCopiedRemote + "\033[0m")
-				} else {
-					fmt.Println("\033[1;32m" + msg.MainClipboardCopied + "\033[0m")
+						fmt.Printf(msg.MainClipboardError, copyErr)
+					} else if isRemote {
+						fmt.Println("\033[1;32m" + msg.MainClipboardCopiedRemote + "\033[0m")
+					} else {
+						fmt.Println("\033[1;32m" + msg.MainClipboardCopied + "\033[0m")
+					}
+					os.Exit(0)
 				}
-				os.Exit(0)
-			}
 
-			err := shell.Execute(llmResp.Command)
-			if err != nil {
-				fmt.Printf(msg.MainCommandError, err)
-				os.Exit(1)
-			}
+				err := shell.Execute(llmResp.Command)
+				if err != nil {
+					fmt.Printf(msg.MainCommandError, err)
+					os.Exit(1)
+				}
 				os.Exit(0)
 			} else {
 				if cfg.Language == string(i18n.Chinese) {
@@ -133,6 +133,8 @@ var rootCmd = &cobra.Command{
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 func Execute() {
+	cfg, _ := config.Load()
+	localizeCLI(i18n.Lang(cfg.Language))
 	if len(os.Args) == 1 {
 		rootCmd.Help()
 		os.Exit(0)

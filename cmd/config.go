@@ -11,7 +11,7 @@ import (
 func runConfig() {
 	cfg, err := config.Load()
 	if err != nil {
-		fmt.Printf("Warning: could not load existing config: %v\n", err)
+		fmt.Printf(i18n.GetMessages(i18n.Lang(cfg.Language)).ConfigLoadWarning+"\n", err)
 	}
 
 	isFirstTime := cfg.APIKey == ""
@@ -52,7 +52,7 @@ func runFirstTimeConfig(cfg config.Config) {
 		return
 	}
 
-	saveConfig(cfg, msg)
+	saveConfig(cfg)
 }
 
 func runSettingsMenu(cfg config.Config) {
@@ -102,7 +102,7 @@ func runSettingsMenu(cfg config.Config) {
 				fmt.Println(msg.ConfigCancelled)
 				return
 			}
-			saveConfig(cfg, msg)
+			saveConfig(cfg)
 			return
 		case msg.ConfigSelectAPIKey:
 			err := promptAPIKey(&cfg, msg)
@@ -110,7 +110,7 @@ func runSettingsMenu(cfg config.Config) {
 				fmt.Println(msg.ConfigCancelled)
 				return
 			}
-			saveConfig(cfg, msg)
+			saveConfig(cfg)
 			return
 		case msg.ConfigSelectBaseURL:
 			err := promptBaseURL(&cfg, msg)
@@ -118,7 +118,7 @@ func runSettingsMenu(cfg config.Config) {
 				fmt.Println(msg.ConfigCancelled)
 				return
 			}
-			saveConfig(cfg, msg)
+			saveConfig(cfg)
 			return
 		case msg.ConfigSelectModel:
 			err := promptModel(&cfg, msg)
@@ -126,7 +126,7 @@ func runSettingsMenu(cfg config.Config) {
 				fmt.Println(msg.ConfigCancelled)
 				return
 			}
-			saveConfig(cfg, msg)
+			saveConfig(cfg)
 			return
 		case msg.ConfigSelectLanguage:
 			err := promptLanguage(&cfg, msg)
@@ -134,7 +134,7 @@ func runSettingsMenu(cfg config.Config) {
 				fmt.Println(msg.ConfigCancelled)
 				return
 			}
-			saveConfig(cfg, msg)
+			saveConfig(cfg)
 			return
 		}
 	}
@@ -187,6 +187,7 @@ func promptLanguage(cfg *config.Config, msg i18n.Messages) error {
 	languagePrompt := &survey.Select{
 		Message: msg.ConfigLanguagePrompt,
 		Options: []string{msg.ConfigLanguageEnglish, msg.ConfigLanguageChinese},
+		Default: i18n.GetLanguageName(i18n.Lang(cfg.Language), i18n.Lang(cfg.Language)),
 	}
 	var language string
 	err := survey.AskOne(languagePrompt, &language)
@@ -201,7 +202,8 @@ func promptLanguage(cfg *config.Config, msg i18n.Messages) error {
 	return nil
 }
 
-func saveConfig(cfg config.Config, msg i18n.Messages) {
+func saveConfig(cfg config.Config) {
+	msg := i18n.GetMessages(i18n.Lang(cfg.Language))
 	if err := config.Save(cfg); err != nil {
 		fmt.Printf(msg.ConfigSaveError, err)
 		return

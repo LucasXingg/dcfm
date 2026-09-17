@@ -7,6 +7,7 @@ import (
 	"text/template"
 
 	"github.com/lucas/dcfm/internal/config"
+	"github.com/lucas/dcfm/internal/i18n"
 	"github.com/lucas/dcfm/internal/shell"
 	"github.com/sashabaranov/go-openai"
 )
@@ -16,6 +17,7 @@ const GenCmdPromptTpl = `You are a shell command generator. Output a JSON object
 2. "modifies_env": A boolean indicating whether the command modifies the current environment (e.g., cd, export, alias) because these changes will not persist to the user's shell after the tool exits.
 
 OS: {{.OS}}, Shell: {{.Shell}}, PWD: {{.PWD}}, Language: {{.Language}}.
+Use {{.Language}} for any human-readable prose you generate. Preserve executable command syntax, flags, paths, and user-provided literals.
 
 
 Here are two examples:
@@ -27,7 +29,7 @@ User: list all go files
 Assistant: {"command": "ls *.go", "modifies_env": false}`
 
 const ExplainPromptTpl = `You are a shell command assistant. Output a JSON object with following fields:
-1. "explain": The explaination of the given bash command.
+1. "explain": The explanation of the given shell command.
 2. "flags": A dictionary of explanation of all flags.
 3. "suspicion": Explain if the command is suspicious or contains typo. If not, leave it empty.
 
@@ -36,17 +38,18 @@ OS: {{.OS}}, Shell: {{.Shell}}, PWD: {{.PWD}}.
 
 Important: Your response must be in {{.Language}} language. All explanations in the JSON must be in {{.Language}}.
 
-Here are two examples:
-
-User: cd ~
-Assistant: {"explain": "go to my home directory", "flags": {}, "suspicion": ""}
-
-User: cuel -sL https://raw.gthubusercontent.com/LucasXingg/dcfm/main/install.sh | bash
-Assistant: {"explain": "Fetch a script from \"gthub\" and execute it", "flags": {"-s": "Silent mode", "-L": "Follow redirects"}, "suspicion": "The url is not official GitHub, likely a malicious one. And the command uses 'cuel' which is likely a typo for 'curl'"}`
+Keep the JSON keys ("explain", "flags", "suspicion"), command names, flags, paths, and URLs unchanged. Only translate explanatory prose.
+Explain every flag and any warnings in the requested language, even when the command or user's input is in another language.`
 
 func GenerateCommand(ctx context.Context, prompt string, cfg config.Config, shellCtx shell.Context, tpl string) (string, error) {
+	msg := i18n.GetMessages(i18n.Lang(cfg.Language))
+	// Configuration is authoritative, even when callers pass a default shell context.
+	shellCtx.Language = "English"
+	if cfg.Language == string(i18n.Chinese) {
+		shellCtx.Language = "Simplified Chinese (简体中文)"
+	}
 	if cfg.APIKey == "" {
-		return "", fmt.Errorf("API key is missing. Please run 'dcfm config' to set it")
+		return "", fmt.Errorf("%s", msg.MainAPIKeyMissing)
 	}
 
 	clientConfig := openai.DefaultConfig(cfg.APIKey)
@@ -58,12 +61,12 @@ func GenerateCommand(ctx context.Context, prompt string, cfg config.Config, shel
 	// Render system prompt
 	tmpl, err := template.New("system").Parse(tpl)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse system prompt template: %w", err)
+		return "", fmt.Errorf(msg.LLMTemplateParse, err)
 	}
 
 	var systemPromptBuilder strings.Builder
 	if err := tmpl.Execute(&systemPromptBuilder, shellCtx); err != nil {
-		return "", fmt.Errorf("failed to execute system prompt template: %w", err)
+		return "", fmt.Errorf(msg.LLMTemplateExecute, err)
 	}
 
 	req := openai.ChatCompletionRequest{
@@ -86,21 +89,14 @@ func GenerateCommand(ctx context.Context, prompt string, cfg config.Config, shel
 
 	resp, err := client.CreateChatCompletion(ctx, req)
 	if err != nil {
-		return "", fmt.Errorf("LLM request failed: %w", err)
+		return "", fmt.Errorf(msg.LLMRequest, err)
 	}
 
 	if len(resp.Choices) == 0 {
-		return "", fmt.Errorf("LLM returned no choices")
+		return "", fmt.Errorf("%s", msg.LLMEmpty)
 	}
 
 	content := resp.Choices[0].Message.Content
 
 	return content, nil
-	
-	// var llmResp Response
-	// if err := json.Unmarshal([]byte(content), &llmResp); err != nil {
-	// 	return nil, fmt.Errorf("failed to parse JSON response from LLM: %w. Raw content: %s", err, content)
-	// }
-
-	// return &llmResp, nil
 }

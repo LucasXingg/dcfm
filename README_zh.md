@@ -58,6 +58,7 @@ dcfm -c
 - `DCFM_API_KEY`
 - `DCFM_BASE_URL`
 - `DCFM_MODEL`
+- `DCFM_LANGUAGE` (`en` / `zh`)
 
 ## 用法
 

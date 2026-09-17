@@ -58,6 +58,7 @@ You can also override the configuration at runtime using environment variables:
 - `DCFM_API_KEY`
 - `DCFM_BASE_URL`
 - `DCFM_MODEL`
+- `DCFM_LANGUAGE` (`en` / `zh`)
 
 ## Usage
 

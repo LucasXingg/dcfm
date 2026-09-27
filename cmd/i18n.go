@@ -15,6 +15,8 @@ func localizeCLI(lang i18n.Lang) {
 	rootCmd.Short = msg.RootDescription
 	rootCmd.Flags().Lookup("config").Usage = msg.ConfigFlag
 	rootCmd.Flags().Lookup("explain").Usage = msg.ExplainFlag
+	rootCmd.Flags().Lookup("agent").Usage = msg.AgentFlag
+	rootCmd.Flags().Lookup("agent-max-rounds").Usage = msg.AgentMaxRoundsFlag
 	rootCmd.InitDefaultHelpFlag()
 	rootCmd.Flags().Lookup("help").Usage = msg.HelpFlag
 	rootCmd.CompletionOptions.DisableDefaultCmd = true

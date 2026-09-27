@@ -18,7 +18,7 @@ func TestChineseHelpAndMenuHints(t *testing.T) {
 	if err := rootCmd.Help(); err != nil {
 		t.Fatal(err)
 	}
-	for _, text := range []string{"用法：", "选项：", "显示帮助", "解释传入的命令"} {
+	for _, text := range []string{"用法：", "选项：", "显示帮助", "解释传入的命令", "只读工具探索环境", "最大环境探索轮数"} {
 		if !strings.Contains(output.String(), text) {
 			t.Fatalf("missing %q in %s", text, output.String())
 		}

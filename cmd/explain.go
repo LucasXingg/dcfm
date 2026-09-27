@@ -3,8 +3,10 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -51,11 +53,16 @@ func runExplain(args []string) {
 	}
 	fmt.Println(msg.ExplainGenerating)
 	shellCtx := shell.GetContextWithLanguage(cfg.Language)
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 
 	content, err := llm.GenerateCommand(ctx, prompt, cfg, shellCtx, llm.ExplainPromptTpl)
+	stop()
 
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			fmt.Println(msg.MainExecuteCancel)
+			return
+		}
 		fmt.Printf(msg.ExplainError+"\n", err)
 		os.Exit(1)
 	}

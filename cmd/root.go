@@ -3,9 +3,10 @@ package cmd
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -19,20 +20,31 @@ import (
 
 var configFlag bool
 var explainFlag bool
-
-type cmdResponse struct {
-	Command     string `json:"command"`
-	ModifiesEnv bool   `json:"modifies_env"`
-}
+var agentFlag bool
+var agentMaxRounds int
 
 func init() {
 	rootCmd.Flags().BoolVarP(&configFlag, "config", "c", false, "Configure dcfm API Key, Base URL, and Model")
 	rootCmd.Flags().BoolVarP(&explainFlag, "explain", "e", false, "Explain the command you pass in")
+	rootCmd.Flags().BoolVarP(&agentFlag, "agent", "a", false, "Explore the environment with read-only tools before generating a command")
+	rootCmd.Flags().IntVar(&agentMaxRounds, "agent-max-rounds", llm.DefaultAgentMaxRounds, "Maximum exploration rounds (1-20; requires --agent)")
+	rootCmd.MarkFlagsMutuallyExclusive("agent", "explain", "config")
 }
 
 var rootCmd = &cobra.Command{
 	Use:   "dcfm [prompt]",
 	Short: "dcfm translates natural language into shell commands",
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		cfg, _ := config.Load()
+		msg := i18n.GetMessages(i18n.Lang(cfg.Language))
+		if cmd.Flags().Changed("agent-max-rounds") && !agentFlag {
+			return fmt.Errorf("%s", msg.AgentRoundsRequireFlag)
+		}
+		if agentFlag && (agentMaxRounds < 1 || agentMaxRounds > 20) {
+			return fmt.Errorf("%s", msg.AgentInvalidRounds)
+		}
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		if configFlag {
 			runConfig()
@@ -58,19 +70,41 @@ var rootCmd = &cobra.Command{
 
 		msg := i18n.GetMessages(i18n.Lang(cfg.Language))
 		shellCtx := shell.GetContextWithLanguage(cfg.Language)
-		ctx := context.Background()
 
 		for {
-			fmt.Println(msg.MainGenerating)
-			content, err := llm.GenerateCommand(ctx, prompt, cfg, shellCtx, llm.GenCmdPromptTpl)
+			ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt)
+			var content string
+			if agentFlag {
+				fmt.Println(msg.AgentExploring)
+				content, err = llm.GenerateCommandAgent(ctx, prompt, cfg, shellCtx, llm.AgentOptions{
+					MaxRounds: agentMaxRounds,
+					OnToolCall: func(name, arguments string) {
+						if len(arguments) > 512 {
+							arguments = arguments[:512] + "..."
+						}
+						if len(name) > 80 {
+							name = name[:80] + "..."
+						}
+						fmt.Fprintf(cmd.ErrOrStderr(), msg.AgentToolCall+"\n", name, arguments)
+					},
+				})
+			} else {
+				fmt.Println(msg.MainGenerating)
+				content, err = llm.GenerateCommand(ctx, prompt, cfg, shellCtx, llm.GenCmdPromptTpl)
+			}
+			stop()
 
 			if err != nil {
+				if errors.Is(err, context.Canceled) {
+					fmt.Println(msg.MainExecuteCancel)
+					return
+				}
 				fmt.Printf(msg.MainErrorGeneratingCommand, err)
 				os.Exit(1)
 			}
 
-			var llmResp cmdResponse
-			if err := json.Unmarshal([]byte(content), &llmResp); err != nil {
+			llmResp, err := llm.ParseCommandResponse(content)
+			if err != nil {
 				fmt.Printf(msg.MainErrorParsingResponse, err, content)
 				os.Exit(1)
 			}
@@ -114,7 +148,7 @@ var rootCmd = &cobra.Command{
 					os.Exit(0)
 				}
 
-				err := shell.Execute(llmResp.Command)
+				err := shell.ExecuteWithContext(cmd.Context(), llmResp.Command, shellCtx)
 				if err != nil {
 					fmt.Printf(msg.MainCommandError, err)
 					os.Exit(1)

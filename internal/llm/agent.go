@@ -61,6 +61,9 @@ func GenerateCommandAgent(ctx context.Context, prompt string, cfg config.Config,
 	defer cancel()
 	req.Tools = explorationTools()
 	req.MaxTokens = 2048
+	if cfg.Provider == config.ProviderDeepSeek {
+		req.MaxTokens = deepSeekMaxTokens
+	}
 	totalCalls := 0
 	for round := 0; ; round++ {
 		if err := ctx.Err(); err != nil {
@@ -71,7 +74,7 @@ func GenerateCommandAgent(ctx context.Context, prompt string, cfg config.Config,
 		// Tool-calling requests omit JSON mode for compatible providers that
 		// cannot combine it with tools. The system prompt still specifies JSON.
 		req.ResponseFormat = nil
-		if round == 0 {
+		if round == 0 && cfg.Provider != config.ProviderDeepSeek {
 			req.ToolChoice = "required"
 		}
 		if final {
@@ -81,6 +84,11 @@ func GenerateCommandAgent(ctx context.Context, prompt string, cfg config.Config,
 				Role:    openai.ChatMessageRoleSystem,
 				Content: "Exploration is complete. Make no further tool calls. Return the final command JSON using the collected evidence.",
 			})
+		}
+		if final && cfg.Provider == config.ProviderDeepSeek {
+			// End exploration by removing tools rather than forcing a tool choice.
+			req.Tools = nil
+			req.ToolChoice = nil
 		}
 		response, err := complete(ctx, client, req, cfg)
 		if err != nil {

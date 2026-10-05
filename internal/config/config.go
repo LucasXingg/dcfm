@@ -7,7 +7,14 @@ import (
 	"path/filepath"
 )
 
+const (
+	ProviderDeepSeek = "deepseek"
+	DeepSeekBaseURL  = "https://api.deepseek.com"
+	DeepSeekModel    = "deepseek-flash"
+)
+
 type Config struct {
+	Provider string `json:"provider,omitempty"`
 	APIKey   string `json:"api_key"`
 	BaseURL  string `json:"base_url,omitempty"`
 	Model    string `json:"model,omitempty"`
@@ -48,6 +55,9 @@ func Load() (Config, error) {
 	}
 
 	// Environment variable overrides
+	if provider := os.Getenv("DCFM_PROVIDER"); provider != "" {
+		cfg.Provider = provider
+	}
 	if envKey := os.Getenv("DCFM_API_KEY"); envKey != "" {
 		cfg.APIKey = envKey
 	}
@@ -59,6 +69,16 @@ func Load() (Config, error) {
 	}
 	if envLang := os.Getenv("DCFM_LANGUAGE"); envLang != "" {
 		cfg.Language = envLang
+	}
+
+	// DeepSeek defaults are opt-in; existing OpenAI-compatible settings stay intact.
+	if cfg.Provider == ProviderDeepSeek {
+		if cfg.BaseURL == "" {
+			cfg.BaseURL = DeepSeekBaseURL
+		}
+		if cfg.Model == "" {
+			cfg.Model = DeepSeekModel
+		}
 	}
 
 	// Set defaults

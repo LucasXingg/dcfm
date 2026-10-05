@@ -54,8 +54,15 @@ dcfm -c
 
 *注意：配置文件权限为 `0600`，使用操作系统的用户配置目录：macOS 为 `~/Library/Application Support/dcfm/config.json`；Linux 为 `$XDG_CONFIG_HOME/dcfm/config.json`，未设置该变量时为 `~/.config/dcfm/config.json`。*
 
+### DeepSeek 官方提供商
+
+运行 `dcfm -c`，选择 **提供商 → DeepSeek（官方，启用思考模式）**，输入 DeepSeek API 密钥。预设使用 `https://api.deepseek.com` 和 `deepseek-flash`，模型名称仍可修改。只有主动选择 DeepSeek 才会启用新流程，已有配置继续沿用原行为。
+
+DeepSeek 请求使用 `thinking: {"type":"enabled"}` 和 `reasoning_effort: "high"`。Agent 探索使用自动工具选择，回传 `reasoning_content` 和工具结果；达到探索上限后移除工具并请求最终命令。输出预算为 16,384 token，包含思考内容。参见[官方思考模式文档](https://api-docs.deepseek.com/zh-cn/guides/thinking_mode/)。
+
 ### 环境变量
 您也可以在运行时通过使用环境变量覆盖配置：
+- `DCFM_PROVIDER` (`deepseek`; 留空使用原兼容流程)
 - `DCFM_API_KEY`
 - `DCFM_BASE_URL`
 - `DCFM_MODEL`

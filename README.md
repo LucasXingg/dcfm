@@ -54,8 +54,15 @@ You will be interactively prompted for:
 
 *Note: Your configuration is stored with `0600` permissions in the OS user configuration directory: `~/Library/Application Support/dcfm/config.json` on macOS; `$XDG_CONFIG_HOME/dcfm/config.json` on Linux, or `~/.config/dcfm/config.json` when that variable is unset.*
 
+### Official DeepSeek provider
+
+Run `dcfm -c`, choose **Provider → DeepSeek (official, thinking enabled)**, and enter your DeepSeek API key. The preset uses `https://api.deepseek.com` and `deepseek-flash`; the model remains editable. Existing configurations keep their current behavior until you explicitly select DeepSeek.
+
+The DeepSeek provider sends `thinking: {"type":"enabled"}` and `reasoning_effort: "high"`. Agent exploration uses automatic tool selection, preserves `reasoning_content` with tool results, and removes tools for the final request when the exploration budget is reached. The output budget is 16,384 tokens, including reasoning. See the [official thinking-mode guide](https://api-docs.deepseek.com/zh-cn/guides/thinking_mode/).
+
 ### Environment Variables
 You can also override the configuration at runtime using environment variables:
+- `DCFM_PROVIDER` (`deepseek`; unset for the existing compatible flow)
 - `DCFM_API_KEY`
 - `DCFM_BASE_URL`
 - `DCFM_MODEL`

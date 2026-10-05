@@ -28,7 +28,13 @@ func runFirstTimeConfig(cfg config.Config) {
 
 	fmt.Printf("\n=== %s ===\n\n", msg.ConfigTitle)
 
-	err := promptAPIKey(&cfg, msg)
+	err := promptProvider(&cfg, msg)
+	if err != nil {
+		fmt.Println(msg.ConfigCancelled)
+		return
+	}
+
+	err = promptAPIKey(&cfg, msg)
 	if err != nil {
 		fmt.Println(msg.ConfigCancelled)
 		return
@@ -63,6 +69,7 @@ func runSettingsMenu(cfg config.Config) {
 
 		options := []string{
 			msg.ConfigSelectAll,
+			msg.ConfigSelectProvider,
 			msg.ConfigSelectAPIKey,
 			msg.ConfigSelectBaseURL,
 			msg.ConfigSelectModel,
@@ -81,8 +88,26 @@ func runSettingsMenu(cfg config.Config) {
 		}
 
 		switch selection {
+		case msg.ConfigSelectProvider:
+			if err := promptProvider(&cfg, msg); err != nil {
+				fmt.Println(msg.ConfigCancelled)
+				return
+			}
+			if cfg.Provider == config.ProviderDeepSeek {
+				if err := promptAPIKey(&cfg, msg); err != nil {
+					fmt.Println(msg.ConfigCancelled)
+					return
+				}
+			}
+			saveConfig(cfg)
+			return
 		case msg.ConfigSelectAll:
-			err := promptAPIKey(&cfg, msg)
+			err := promptProvider(&cfg, msg)
+			if err != nil {
+				fmt.Println(msg.ConfigCancelled)
+				return
+			}
+			err = promptAPIKey(&cfg, msg)
 			if err != nil {
 				fmt.Println(msg.ConfigCancelled)
 				return
@@ -209,4 +234,31 @@ func saveConfig(cfg config.Config) {
 		return
 	}
 	fmt.Println(msg.ConfigSaved)
+}
+
+// Choosing custom leaves the existing endpoint, model and key untouched.
+func promptProvider(cfg *config.Config, msg i18n.Messages) error {
+	defaultOption := msg.ConfigProviderCustom
+	if cfg.Provider == config.ProviderDeepSeek {
+		defaultOption = msg.ConfigProviderDeepSeek
+	}
+	var selection string
+	if err := survey.AskOne(&survey.Select{
+		Message: msg.ConfigProviderPrompt,
+		Options: []string{msg.ConfigProviderCustom, msg.ConfigProviderDeepSeek},
+		Default: defaultOption,
+	}, &selection); err != nil {
+		return err
+	}
+	if selection == msg.ConfigProviderDeepSeek {
+		if cfg.Provider != config.ProviderDeepSeek {
+			cfg.APIKey = ""
+			cfg.BaseURL = config.DeepSeekBaseURL
+			cfg.Model = config.DeepSeekModel
+		}
+		cfg.Provider = config.ProviderDeepSeek
+	} else {
+		cfg.Provider = ""
+	}
+	return nil
 }

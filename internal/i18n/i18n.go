@@ -42,6 +42,10 @@ type Messages struct {
 	AgentInvalidToolCall   string
 	AgentNoExploration     string
 
+	ConfigSelectProvider       string
+	ConfigProviderPrompt       string
+	ConfigProviderCustom       string
+	ConfigProviderDeepSeek     string
 	ConfigTitle                string
 	ConfigSelectPrompt         string
 	ConfigSelectAll            string
@@ -110,6 +114,10 @@ var messages = map[Lang]Messages{
 		AgentInvalidToolCall:   "The model returned an invalid tool call (missing/duplicate ID or unsupported type)",
 		AgentNoExploration:     "The model did not call any tools. Agent mode requires a model and API that support function calling; use normal mode otherwise",
 
+		ConfigSelectProvider:       "Provider",
+		ConfigProviderPrompt:       "Select provider:",
+		ConfigProviderCustom:       "OpenAI / Custom (keep current settings)",
+		ConfigProviderDeepSeek:     "DeepSeek (official, thinking enabled)",
 		ConfigTitle:                "dcfm Configuration",
 		ConfigSelectPrompt:         "What would you like to configure?",
 		ConfigSelectAll:            "Configure All Settings",
@@ -176,6 +184,10 @@ var messages = map[Lang]Messages{
 		AgentInvalidToolCall:   "模型返回了无效的工具调用（ID 缺失或重复，或类型不支持）",
 		AgentNoExploration:     "模型未调用任何工具。Agent 模式需要模型和 API 支持函数调用，否则请使用普通模式",
 
+		ConfigSelectProvider:       "提供商",
+		ConfigProviderPrompt:       "选择提供商：",
+		ConfigProviderCustom:       "OpenAI / 自定义（保留当前设置）",
+		ConfigProviderDeepSeek:     "DeepSeek（官方，启用思考模式）",
 		ConfigTitle:                "dcfm 配置",
 		ConfigSelectPrompt:         "您想要配置什么？",
 		ConfigSelectAPIKey:         "API 密钥",

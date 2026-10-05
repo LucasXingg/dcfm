@@ -76,7 +76,14 @@ func prepareRequest(prompt string, cfg config.Config, shellCtx shell.Context, tp
 	if cfg.BaseURL != "" {
 		clientConfig.BaseURL = cfg.BaseURL
 	}
-	clientConfig.HTTPClient = &http.Client{Timeout: 60 * time.Second}
+	httpClient := &http.Client{Timeout: 60 * time.Second}
+	if cfg.Provider == config.ProviderDeepSeek {
+		httpClient.Transport = deepSeekTransport{base: http.DefaultTransport}
+		if cfg.BaseURL == "" {
+			clientConfig.BaseURL = config.DeepSeekBaseURL
+		}
+	}
+	clientConfig.HTTPClient = httpClient
 	client := openai.NewClientWithConfig(clientConfig)
 
 	// Render system prompt
@@ -114,6 +121,14 @@ func prepareRequest(prompt string, cfg config.Config, shellCtx shell.Context, tp
 		ResponseFormat: &openai.ChatCompletionResponseFormat{
 			Type: openai.ChatCompletionResponseFormatTypeJSONObject,
 		},
+	}
+	if cfg.Provider == config.ProviderDeepSeek {
+		if req.Model == "" {
+			req.Model = config.DeepSeekModel
+		}
+		req.Temperature = 0
+		req.ReasoningEffort = "high"
+		req.MaxTokens = deepSeekMaxTokens
 	}
 	return client, req, nil
 }

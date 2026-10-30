@@ -3,6 +3,7 @@ package llm
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -94,5 +95,31 @@ func TestDeepSeekThinkingRequests(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestDeepSeekAgentAcceptsFencedFinalCommand(t *testing.T) {
+	for _, maxRounds := range []int{1, DefaultAgentMaxRounds} {
+		t.Run(fmt.Sprint(maxRounds), func(t *testing.T) {
+			cfg, count := mockModel(t, func(req openai.ChatCompletionRequest, step int) openai.ChatCompletionMessage {
+				if req.Model != config.DeepSeekModel {
+					t.Errorf("model = %q, want deepseek-flash", req.Model)
+				}
+				if step == 1 {
+					return openai.ChatCompletionMessage{ReasoningContent: "inspect project", ToolCalls: []openai.ToolCall{toolCall("env", "get_environment", `{}`)}}
+				}
+				return openai.ChatCompletionMessage{Content: "```json\n{\"command\":\"cat README.md\",\"modifies_env\":false}\n```"}
+			})
+			cfg.Provider = config.ProviderDeepSeek
+			cfg.Model = "" // Exercise the DeepSeek default, not a mock model.
+			result, err := GenerateCommandAgent(context.Background(), "what is this project?", cfg, shell.Context{PWD: t.TempDir()}, AgentOptions{MaxRounds: maxRounds})
+			if err != nil {
+				t.Fatal(err)
+			}
+			command, err := ParseCommandResponse(result)
+			if err != nil || command.Command != "cat README.md" || command.ModifiesEnv || count.Load() != 2 {
+				t.Fatalf("command = %+v, err = %v, calls = %d", command, err, count.Load())
+			}
+		})
 	}
 }

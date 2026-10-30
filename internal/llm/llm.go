@@ -171,6 +171,15 @@ type CommandResponse struct {
 // ParseCommandResponse rejects incomplete or malformed output before it can be
 // displayed for execution, including a missing environment-change indicator.
 func ParseCommandResponse(content string) (CommandResponse, error) {
+	// Tool-enabled turns may end with Markdown even when the prompt asks for
+	// JSON. Unwrap only a complete JSON/plain code fence; validate its entire
+	// contents below rather than extracting a command from surrounding prose.
+	content = strings.TrimSpace(content)
+	if header, body, ok := strings.Cut(content, "\n"); ok && (strings.TrimSpace(header) == "```json" || strings.TrimSpace(header) == "```") {
+		if strings.HasSuffix(body, "\n```") {
+			content = strings.TrimSpace(strings.TrimSuffix(body, "\n```"))
+		}
+	}
 	var wire struct {
 		Command     string `json:"command"`
 		ModifiesEnv *bool  `json:"modifies_env"`

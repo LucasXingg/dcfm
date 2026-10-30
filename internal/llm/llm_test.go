@@ -68,7 +68,7 @@ func TestEnvironmentFactsReachAllPrompts(t *testing.T) {
 }
 
 func TestParseCommandResponse(t *testing.T) {
-	for _, content := range []string{`{"command":"ls -la","modifies_env":false}`, `{"command":"cd ~","modifies_env":true}`} {
+	for _, content := range []string{`{"command":"ls -la","modifies_env":false}`, `{"command":"cd ~","modifies_env":true}`, "```json\n{\"command\":\"ls -la\",\"modifies_env\":false}\n```", " \n```\r\n{\"command\":\"ls -la\",\"modifies_env\":false}\r\n```\n"} {
 		if _, err := ParseCommandResponse(content); err != nil {
 			t.Errorf("valid response rejected: %v", err)
 		}
@@ -76,6 +76,18 @@ func TestParseCommandResponse(t *testing.T) {
 	for _, content := range []string{"", "```json\n{}\n```", "null", `{}`, `{"command":"  ","modifies_env":false}`, `{"command":"ls"}`, `{"command":"ls","modifies_env":null}`, `{"command":"ls","modifies_env":"false"}`, `{"command":"ls\nrm a","modifies_env":false}`, `{"command":"ls\u001b[31m","modifies_env":false}`} {
 		if _, err := ParseCommandResponse(content); err == nil {
 			t.Errorf("invalid response accepted: %s", content)
+		}
+	}
+	for _, content := range []string{
+		"```json\n{\"command\":\"ls\",\"modifies_env\":false}",
+		"Here is the command:\n```json\n{\"command\":\"ls\",\"modifies_env\":false}\n```",
+		"```json\n{\"command\":\"ls\",\"modifies_env\":false}\n```\nextra",
+		"```sh\n{\"command\":\"ls\",\"modifies_env\":false}\n```",
+		"```json\n{\"command\":\"ls\\nrm a\",\"modifies_env\":false}\n```",
+		"```json\n{\"command\":\"ls\"}\n```",
+	} {
+		if _, err := ParseCommandResponse(content); err == nil {
+			t.Errorf("invalid fenced response accepted: %s", content)
 		}
 	}
 }

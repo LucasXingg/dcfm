@@ -8,17 +8,20 @@ import (
 )
 
 const (
+	ModeDirect       = "direct"
+	ModeAgent        = "agent"
 	ProviderDeepSeek = "deepseek"
 	DeepSeekBaseURL  = "https://api.deepseek.com"
 	DeepSeekModel    = "deepseek-flash"
 )
 
 type Config struct {
-	Provider string `json:"provider,omitempty"`
-	APIKey   string `json:"api_key"`
-	BaseURL  string `json:"base_url,omitempty"`
-	Model    string `json:"model,omitempty"`
-	Language string `json:"language,omitempty"`
+	DefaultMode string `json:"default_mode,omitempty"`
+	Provider    string `json:"provider,omitempty"`
+	APIKey      string `json:"api_key"`
+	BaseURL     string `json:"base_url,omitempty"`
+	Model       string `json:"model,omitempty"`
+	Language    string `json:"language,omitempty"`
 }
 
 func getDir() (string, error) {
@@ -79,6 +82,13 @@ func Load() (Config, error) {
 		if cfg.Model == "" {
 			cfg.Model = DeepSeekModel
 		}
+	}
+
+	if cfg.DefaultMode == "" {
+		cfg.DefaultMode = ModeDirect
+	}
+	if cfg.DefaultMode != ModeDirect && cfg.DefaultMode != ModeAgent {
+		return cfg, fmt.Errorf("invalid default_mode %q: expected direct or agent", cfg.DefaultMode)
 	}
 
 	// Set defaults

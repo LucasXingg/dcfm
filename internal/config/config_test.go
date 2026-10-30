@@ -13,7 +13,7 @@ func TestLoadWithoutFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Language != "en" || cfg.Model != "gpt-4o" || cfg.BaseURL == "" {
+	if cfg.DefaultMode != ModeDirect || cfg.Language != "en" || cfg.Model != "gpt-4o" || cfg.BaseURL == "" {
 		t.Fatalf("missing defaults: %+v", cfg)
 	}
 	t.Setenv("DCFM_LANGUAGE", "zh")
@@ -62,7 +62,7 @@ func TestLegacyProviderConfigStaysUnchanged(t *testing.T) {
 	for _, key := range []string{"DCFM_API_KEY", "DCFM_BASE_URL", "DCFM_MODEL", "DCFM_LANGUAGE", "DCFM_PROVIDER"} {
 		t.Setenv(key, "")
 	}
-	want := Config{APIKey: "legacy-key", BaseURL: "https://example.test/v1", Model: "legacy-model", Language: "zh"}
+	want := Config{DefaultMode: ModeDirect, APIKey: "legacy-key", BaseURL: "https://example.test/v1", Model: "legacy-model", Language: "zh"}
 	if err := Save(want); err != nil {
 		t.Fatal(err)
 	}
@@ -74,5 +74,24 @@ func TestLegacyProviderConfigStaysUnchanged(t *testing.T) {
 	got, err = Load()
 	if err != nil || got.Provider != ProviderDeepSeek || got.BaseURL != want.BaseURL || got.Model != want.Model || got.APIKey != want.APIKey {
 		t.Fatalf("provider override changed explicit values: %+v, %v", got, err)
+	}
+}
+
+func TestDefaultModePersistence(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	for _, mode := range []string{ModeAgent, ModeDirect, "invalid"} {
+		if err := Save(Config{DefaultMode: mode}); err != nil {
+			t.Fatal(err)
+		}
+		cfg, err := Load()
+		if mode == "invalid" {
+			if err == nil {
+				t.Fatal("accepted invalid mode")
+			}
+		} else if err != nil || cfg.DefaultMode != mode {
+			t.Fatalf("mode = %q, err = %v", cfg.DefaultMode, err)
+		}
 	}
 }

@@ -27,8 +27,9 @@ func init() {
 	rootCmd.Flags().BoolVarP(&configFlag, "config", "c", false, "Configure dcfm API Key, Base URL, and Model")
 	rootCmd.Flags().BoolVarP(&explainFlag, "explain", "e", false, "Explain the command you pass in")
 	rootCmd.Flags().BoolVarP(&agentFlag, "agent", "a", false, "Explore the environment with read-only tools before generating a command")
-	rootCmd.Flags().IntVar(&agentMaxRounds, "agent-max-rounds", llm.DefaultAgentMaxRounds, "Maximum exploration rounds (1-20; requires --agent)")
-	rootCmd.MarkFlagsMutuallyExclusive("agent", "explain", "config")
+	rootCmd.Flags().IntVar(&agentMaxRounds, "agent-max-rounds", llm.DefaultAgentMaxRounds, "Maximum exploration rounds (1-20; requires agent mode)")
+	rootCmd.Flags().Bool("direct", false, "Generate a command without agent exploration")
+	rootCmd.MarkFlagsMutuallyExclusive("agent", "direct", "explain", "config")
 }
 
 var rootCmd = &cobra.Command{
@@ -36,11 +37,12 @@ var rootCmd = &cobra.Command{
 	Short: "dcfm translates natural language into shell commands",
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		cfg, _ := config.Load()
+		useAgent := selectedAgentMode(cmd, cfg)
 		msg := i18n.GetMessages(i18n.Lang(cfg.Language))
-		if cmd.Flags().Changed("agent-max-rounds") && !agentFlag {
+		if cmd.Flags().Changed("agent-max-rounds") && !useAgent {
 			return fmt.Errorf("%s", msg.AgentRoundsRequireFlag)
 		}
-		if agentFlag && (agentMaxRounds < 1 || agentMaxRounds > 20) {
+		if useAgent && (agentMaxRounds < 1 || agentMaxRounds > 20) {
 			return fmt.Errorf("%s", msg.AgentInvalidRounds)
 		}
 		return nil
@@ -70,11 +72,12 @@ var rootCmd = &cobra.Command{
 
 		msg := i18n.GetMessages(i18n.Lang(cfg.Language))
 		shellCtx := shell.GetContextWithLanguage(cfg.Language)
+		useAgent := selectedAgentMode(cmd, cfg)
 
 		for {
 			ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt)
 			var content string
-			if agentFlag {
+			if useAgent {
 				fmt.Println(msg.AgentExploring)
 				content, err = llm.GenerateCommandAgent(ctx, prompt, cfg, shellCtx, llm.AgentOptions{
 					MaxRounds: agentMaxRounds,
@@ -178,4 +181,20 @@ func Execute() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+
+// Explicit flags take precedence over the saved default. Settings and explain
+// always keep their own behavior, regardless of the generation default.
+func selectedAgentMode(cmd *cobra.Command, cfg config.Config) bool {
+	for _, name := range []string{"config", "explain", "direct"} {
+		enabled, _ := cmd.Flags().GetBool(name)
+		if enabled {
+			return false
+		}
+	}
+	if cmd.Flags().Changed("agent") {
+		enabled, _ := cmd.Flags().GetBool("agent")
+		return enabled
+	}
+	return cfg.DefaultMode == config.ModeAgent
 }

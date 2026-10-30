@@ -29,6 +29,7 @@ type Messages struct {
 	LLMRequest             string
 	LLMEmpty               string
 	LLMIncomplete          string
+	DirectFlag             string
 	AgentFlag              string
 	AgentMaxRoundsFlag     string
 	AgentExploring         string
@@ -42,6 +43,9 @@ type Messages struct {
 	AgentInvalidToolCall   string
 	AgentNoExploration     string
 
+	ConfigSelectDefaultMode    string
+	ConfigModeDirect           string
+	ConfigModeAgent            string
 	ConfigSelectProvider       string
 	ConfigProviderPrompt       string
 	ConfigProviderCustom       string
@@ -101,12 +105,13 @@ var messages = map[Lang]Messages{
 		LLMRequest:             "LLM request failed: %w",
 		LLMEmpty:               "LLM returned no choices",
 		LLMIncomplete:          "LLM response is incomplete (%s); no command will be executed",
+		DirectFlag:             "Generate a command without agent exploration",
 		AgentFlag:              "Explore the environment with read-only tools before generating a command",
-		AgentMaxRoundsFlag:     "Maximum exploration rounds (1-20; requires --agent)",
+		AgentMaxRoundsFlag:     "Maximum exploration rounds (1-20; requires agent mode)",
 		AgentExploring:         "Exploring the environment (read-only)...",
 		AgentToolCall:          "  Inspecting: %q %q",
 		AgentInvalidRounds:     "Agent exploration rounds must be between 1 and 20",
-		AgentRoundsRequireFlag: "--agent-max-rounds requires --agent",
+		AgentRoundsRequireFlag: "--agent-max-rounds requires --agent or default agent mode",
 		AgentEnvironmentError:  "Cannot inspect the working directory: %w",
 		AgentInvalidResponse:   "Invalid final command from agent: %w",
 		AgentLimitExceeded:     "The model continued requesting tools after the exploration limit; no command will be executed",
@@ -114,6 +119,9 @@ var messages = map[Lang]Messages{
 		AgentInvalidToolCall:   "The model returned an invalid tool call (missing/duplicate ID or unsupported type)",
 		AgentNoExploration:     "The model did not call any tools. Agent mode requires a model and API that support function calling; use normal mode otherwise",
 
+		ConfigSelectDefaultMode:    "Default Mode",
+		ConfigModeDirect:           "Direct (generate a command immediately)",
+		ConfigModeAgent:            "Agent (explore the environment first)",
 		ConfigSelectProvider:       "Provider",
 		ConfigProviderPrompt:       "Select provider:",
 		ConfigProviderCustom:       "OpenAI / Custom (keep current settings)",
@@ -171,12 +179,13 @@ var messages = map[Lang]Messages{
 		LLMRequest:             "模型请求失败：%w",
 		LLMEmpty:               "模型未返回任何结果",
 		LLMIncomplete:          "模型响应不完整（%s），不会执行命令",
+		DirectFlag:             "直接生成命令，不探索环境",
 		AgentFlag:              "先用只读工具探索环境，再生成命令",
-		AgentMaxRoundsFlag:     "最大环境探索轮数（1-20；需同时使用 --agent）",
+		AgentMaxRoundsFlag:     "最大环境探索轮数（1-20；需要 Agent 模式）",
 		AgentExploring:         "正在探索环境（只读）...",
 		AgentToolCall:          "  正在查询：%q %q",
 		AgentInvalidRounds:     "环境探索轮数必须在 1 到 20 之间",
-		AgentRoundsRequireFlag: "--agent-max-rounds 需要同时使用 --agent",
+		AgentRoundsRequireFlag: "--agent-max-rounds 需要 --agent 或默认 Agent 模式",
 		AgentEnvironmentError:  "无法检查当前工作目录：%w",
 		AgentInvalidResponse:   "Agent 返回的最终命令无效：%w",
 		AgentLimitExceeded:     "模型在达到探索上限后仍请求调用工具，不会执行命令",
@@ -184,6 +193,9 @@ var messages = map[Lang]Messages{
 		AgentInvalidToolCall:   "模型返回了无效的工具调用（ID 缺失或重复，或类型不支持）",
 		AgentNoExploration:     "模型未调用任何工具。Agent 模式需要模型和 API 支持函数调用，否则请使用普通模式",
 
+		ConfigSelectDefaultMode:    "默认模式",
+		ConfigModeDirect:           "Direct（直接生成命令）",
+		ConfigModeAgent:            "Agent（先探索环境）",
 		ConfigSelectProvider:       "提供商",
 		ConfigProviderPrompt:       "选择提供商：",
 		ConfigProviderCustom:       "OpenAI / 自定义（保留当前设置）",

@@ -52,6 +52,12 @@ func runFirstTimeConfig(cfg config.Config) {
 		return
 	}
 
+	err = promptDefaultMode(&cfg, msg)
+	if err != nil {
+		fmt.Println(msg.ConfigCancelled)
+		return
+	}
+
 	err = promptLanguage(&cfg, msg)
 	if err != nil {
 		fmt.Println(msg.ConfigCancelled)
@@ -73,6 +79,7 @@ func runSettingsMenu(cfg config.Config) {
 			msg.ConfigSelectAPIKey,
 			msg.ConfigSelectBaseURL,
 			msg.ConfigSelectModel,
+			msg.ConfigSelectDefaultMode,
 			msg.ConfigSelectLanguage,
 		}
 
@@ -101,6 +108,13 @@ func runSettingsMenu(cfg config.Config) {
 			}
 			saveConfig(cfg)
 			return
+		case msg.ConfigSelectDefaultMode:
+			if err := promptDefaultMode(&cfg, msg); err != nil {
+				fmt.Println(msg.ConfigCancelled)
+				return
+			}
+			saveConfig(cfg)
+			return
 		case msg.ConfigSelectAll:
 			err := promptProvider(&cfg, msg)
 			if err != nil {
@@ -118,6 +132,11 @@ func runSettingsMenu(cfg config.Config) {
 				return
 			}
 			err = promptModel(&cfg, msg)
+			if err != nil {
+				fmt.Println(msg.ConfigCancelled)
+				return
+			}
+			err = promptDefaultMode(&cfg, msg)
 			if err != nil {
 				fmt.Println(msg.ConfigCancelled)
 				return
@@ -259,6 +278,26 @@ func promptProvider(cfg *config.Config, msg i18n.Messages) error {
 		cfg.Provider = config.ProviderDeepSeek
 	} else {
 		cfg.Provider = ""
+	}
+	return nil
+}
+
+func promptDefaultMode(cfg *config.Config, msg i18n.Messages) error {
+	defaultOption := msg.ConfigModeDirect
+	if cfg.DefaultMode == config.ModeAgent {
+		defaultOption = msg.ConfigModeAgent
+	}
+	var selection string
+	if err := survey.AskOne(&survey.Select{
+		Message: msg.ConfigSelectDefaultMode,
+		Options: []string{msg.ConfigModeDirect, msg.ConfigModeAgent},
+		Default: defaultOption,
+	}, &selection); err != nil {
+		return err
+	}
+	cfg.DefaultMode = config.ModeDirect
+	if selection == msg.ConfigModeAgent {
+		cfg.DefaultMode = config.ModeAgent
 	}
 	return nil
 }

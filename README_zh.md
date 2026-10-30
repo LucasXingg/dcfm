@@ -60,6 +60,12 @@ dcfm -c
 
 DeepSeek 请求使用 `thinking: {"type":"enabled"}` 和 `reasoning_effort: "high"`。Agent 探索使用自动工具选择，回传 `reasoning_content` 和工具结果；达到探索上限后移除工具并请求最终命令。输出预算为 16,384 token，包含思考内容。参见[官方思考模式文档](https://api-docs.deepseek.com/zh-cn/guides/thinking_mode/)。
 
+### 默认模式
+
+运行 `dcfm -c`，选择 **默认模式 → Direct / Agent**。已有配置默认使用 Direct（直接生成命令）；Agent 会先探索环境。首次配置和“配置所有设置”也包含此选项。
+
+使用 `--agent` 或 `--direct` 可临时覆盖默认模式（`--agent=false` 也会选择 Direct）。启用 Agent 模式后即可使用 `--agent-max-rounds`；解释和配置功能保持独立。配置字段为 `"default_mode": "direct"` 或 `"agent"`。
+
 ### 环境变量
 您也可以在运行时通过使用环境变量覆盖配置：
 - `DCFM_PROVIDER` (`deepseek`; 留空使用原兼容流程)
@@ -109,7 +115,7 @@ dcfm -a --agent-max-rounds 4 "这个项目应该怎么构建？"
 
 探索阶段不会执行 shell 命令或程序。文件读取范围限定在启动目录内部，并检查符号链接是否越界；禁止读取 `.env`、`.ssh`、`.aws`、`.config`、私钥等常见凭据路径。这些检查并非通用的秘密信息检测器，源文件仍可能包含私密内容。读取的文件名和文件内容会发送给您配置的模型服务，请在适合分享给该服务的目录中使用 Agent 模式。工具不会导出全部环境变量的值。
 
-默认最多探索 8 轮；达到上限时，额外请求一次最终命令。`--agent-max-rounds` 可设置为 1–20。每轮最多调用 8 个工具，总计最多 32 次；工具输出大小也有限制。单次 API 请求超时为 60 秒，一次探索总超时为 3 分钟。生成过程中可按 Ctrl+C 取消。模型和 API 需要支持 Chat Completions 函数调用（`tools` / `tool_choice`）及 JSON 输出，不支持时会明确报错；去掉 `--agent` 即使用普通模式。`--agent` 不能与 `--explain`、`--config` 同时使用。
+默认最多探索 8 轮；达到上限时，额外请求一次最终命令。`--agent-max-rounds` 可设置为 1–20。每轮最多调用 8 个工具，总计最多 32 次；工具输出大小也有限制。单次 API 请求超时为 60 秒，一次探索总超时为 3 分钟。生成过程中可按 Ctrl+C 取消。模型和 API 需要支持 Chat Completions 函数调用（`tools` / `tool_choice`）及 JSON 输出，不支持时会明确报错；使用 `--direct` 可在本次调用中选择 Direct 模式。`--agent`、`--direct`、`--explain` 和 `--config` 互斥。
 
 ### 环境信息检测
 

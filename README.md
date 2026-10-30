@@ -60,6 +60,12 @@ Run `dcfm -c`, choose **Provider → DeepSeek (official, thinking enabled)**, an
 
 The DeepSeek provider sends `thinking: {"type":"enabled"}` and `reasoning_effort: "high"`. Agent exploration uses automatic tool selection, preserves `reasoning_content` with tool results, and removes tools for the final request when the exploration budget is reached. The output budget is 16,384 tokens, including reasoning. See the [official thinking-mode guide](https://api-docs.deepseek.com/zh-cn/guides/thinking_mode/).
 
+### Default mode
+
+Run `dcfm -c` and select **Default Mode → Direct / Agent**. Direct remains the default for existing configurations. Agent inspects the environment before generating commands. The setting is also included in first-time setup and Configure All Settings.
+
+Use `--agent` or `--direct` to override the saved mode for one invocation (`--agent=false` also selects Direct). `--agent-max-rounds` works whenever Agent mode is active. Explain and configuration keep their own behavior. The saved field is `"default_mode": "direct"` or `"agent"`.
+
 ### Environment Variables
 You can also override the configuration at runtime using environment variables:
 - `DCFM_PROVIDER` (`deepseek`; unset for the existing compatible flow)
@@ -109,7 +115,7 @@ The model selects tools, receives their results, and can request further inspect
 
 Exploration never executes shell commands or programs. File access stays inside the starting directory, including checks against symlink escapes; common credential paths such as `.env`, `.ssh`, `.aws`, `.config`, and private key files are blocked. These checks are not a general secret detector: relevant source files can still contain private information. Inspected filenames and file contents are sent to your configured model provider, so use agent mode only in directories you are comfortable sharing with that provider. Environment variable values are not dumped.
 
-The default budget is 8 exploration rounds, with one additional final request if the budget is reached. `--agent-max-rounds` accepts 1–20. Limits also apply to tool calls (8 per response, 32 total), tool output, and time (60 seconds per API request, 3 minutes per exploration). Press Ctrl+C to cancel generation. The API and model must support Chat Completions function calling (`tools` / `tool_choice`) and JSON output; unsupported requests fail visibly. Omit `--agent` to use normal mode. `--agent` cannot be combined with `--explain` or `--config`.
+The default budget is 8 exploration rounds, with one additional final request if the budget is reached. `--agent-max-rounds` accepts 1–20. Limits also apply to tool calls (8 per response, 32 total), tool output, and time (60 seconds per API request, 3 minutes per exploration). Press Ctrl+C to cancel generation. The API and model must support Chat Completions function calling (`tools` / `tool_choice`) and JSON output; unsupported requests fail visibly. Use `--direct` to select Direct mode for one invocation. `--agent`, `--direct`, `--explain`, and `--config` are mutually exclusive.
 
 ### Environment detection
 
